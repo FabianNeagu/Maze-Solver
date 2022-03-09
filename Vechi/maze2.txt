@@ -1,0 +1,286 @@
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: 
+// 
+// Create Date:    12:33:27 12/01/2021 
+// Design Name: 
+// Module Name:    maze 
+// Project Name: 
+// Target Devices: 
+// Tool versions: 
+// Description: 
+//
+// Dependencies: 
+//
+// Revision: 
+// Revision 0.01 - File Created
+// Additional Comments: 
+//
+//////////////////////////////////////////////////////////////////////////////////
+module maze(
+		input 		          clk,
+		input [5:0]  starting_col, starting_row, 	// indicii punctului de start
+		input  			  maze_in, 											// ofera informa?ii despre punctul de coordonate [row, col]
+		output reg [5:0] row, col,	 							// selecteaza un rând si o coloana din labirint
+		output reg		  maze_oe,											// output enable (activeaza citirea din labirint la rândul ?i coloana date) - semnal sincron	
+		output reg		  maze_we, 											// write enable (activeaza scrierea în labirint la rândul ?i coloana date) - semnal sincron
+		output reg		  done);	
+		
+	parameter maze_width = 6;
+	reg [3:0] state, next_state;
+	reg [3:0] direction;
+	reg ok;
+	reg [5:0] x,y;
+	// SUD - 0 
+	// EST - 1
+	// NORD - 2
+	// VEST - 3
+	`define S 0
+	`define E 1
+	`define N 2
+	`define V 3
+
+
+	`define Marcare_stare 0
+	`define Citire_test_curve_90_deg 1
+	`define Test_curve_90_deg 2
+	`define Citire_test_turn_90_deg 3
+	`define Test_turn_90_deg 4
+	`define finish_reached 5
+
+	
+	
+	always @(posedge clk)   //Partea secventiala
+	begin
+		state <= next_state;
+	end
+	
+	
+	
+	always @(*)  //Partea combinationala
+	begin
+		maze_oe=0;
+		maze_we=0;
+		done=0;
+		case(state)
+		`Marcare_stare:
+		begin
+			if(direction!=`S && direction!=`N && direction!=`E && direction!=`V)
+			begin
+				direction=`S;
+				x=starting_row;
+				y=starting_col;
+				row=x;
+				col=y;
+				maze_we=1;
+			end else
+			begin
+				row=x;
+				col=y;
+				maze_we=1;
+			end
+			next_state=`Citire_test_curve_90_deg;
+		end
+		`Citire_test_curve_90_deg:  // Verificare ce am in dreapta mea
+		begin
+			if(direction==`S)  
+			begin
+				row=x;
+				col=y-1;
+				maze_oe=1;
+			end
+			
+			if(direction==`E)
+			begin
+				row=x+1;
+				col=y;
+				maze_oe=1;
+			end
+				
+			if(direction==`N)
+			begin
+				row=x;
+				col=y+1;
+				maze_oe=1;
+			end
+					
+			if(direction==`V)
+			begin
+				row=x-1;
+				col=y;
+				maze_oe=1;
+			end
+			next_state=`Test_curve_90_deg;
+		end
+		
+		
+		`Test_curve_90_deg:
+		begin
+		if(maze_in==0)  // Daca in dreapta mea nu mai am perete, ma duc rotesc la dreapta si ma si mut pe pozitia noua
+		begin
+			ok=0;
+			if(direction==`S)
+			begin
+				direction=`V;
+				y=y-1;
+				if(y<0)
+				begin
+					next_state=`finish_reached;
+					ok=1;
+				end
+			end 
+			else	if(direction==`E)
+			begin
+				direction=`S;
+				x=x+1;
+				if(x>63)
+				begin
+					next_state=`finish_reached;
+					ok=1;
+				end
+			end
+			else if(direction==`N)
+			begin
+				direction=`E;
+				y=y+1;
+				if(y>63)
+				begin
+					next_state=`finish_reached;
+					ok=1;
+				end
+			end
+			else if(direction==`V)
+			begin
+				direction=`N;
+				x=x-1;
+				if(x<0)
+				begin
+					next_state=`finish_reached;
+					ok=1;
+				end
+			end
+			if(ok==0)
+			begin
+				next_state=`Marcare_stare;
+			end
+			end	
+			if(maze_in!=0)  // Daca in dreapta mea am perete, ma uit sa vad ce am in fata mea (Sa vad daca fac rotatie)
+			begin
+				next_state=`Citire_test_turn_90_deg;
+			end
+		end
+		
+		`Citire_test_turn_90_deg: // Verificare Ce am in fata mea
+		begin
+			if(direction==`S)
+			begin
+				row=x+1;
+				col=y;
+				maze_oe=1;
+			end
+			if(direction==`E)
+			begin
+				row=x;
+				col=y+1;
+				maze_oe=1;
+			end
+			if(direction==`N)
+			begin
+				row=x-1;
+				col=y;
+				maze_oe=1;
+			end
+			if(direction==`V)
+			begin
+				row=x;
+				col=y-1;
+				maze_oe=1;
+			end
+			next_state=`Test_turn_90_deg;
+		end
+		
+		
+		`Test_turn_90_deg: 
+		begin  //Turn 90 degrees Clock-wise
+			ok=0;
+			if(maze_in==1)  //Daca in fata mea am zid, ma rotesc la stanga( pe loc )
+			begin
+				if(direction==`S)
+				begin
+					direction=`E;
+				end 
+				else	if(direction==`E)
+				begin
+					direction=`N;
+				end
+				else if(direction==`N)
+				begin
+					direction=`V;
+				end
+				else if(direction==`V)
+				begin
+					direction=`S;
+				end
+				next_state=`Marcare_stare;
+			end 
+			if(maze_in!=1) // Daca in fata mea nu am zid, fac pasul inainte
+			begin
+				if(direction==`S)
+				begin
+					x=x+1;
+					if(x>63)
+					begin
+						next_state=`finish_reached;
+						ok=1;
+					end
+				end 
+				else	if(direction==`E)
+				begin
+					y=y+1;
+					if(y>63)
+					begin
+						next_state=`finish_reached;
+						ok=1;
+					end
+				end
+				else if(direction==`N)
+				begin
+					x=x-1;
+					if(x<0)
+					begin
+						next_state=`finish_reached;
+						ok=1;
+					end
+				end
+				else if(direction==`V)
+				begin
+					y=y-1;
+					if(y<0)
+					begin
+						next_state=`finish_reached;
+						ok=1;
+					end
+				end
+				if(ok==0)
+				begin
+					next_state=`Marcare_stare;
+				end
+			end	
+		end
+		 
+		 
+		 `finish_reached:
+		 begin   //Finish was reached
+			done=1;
+		 end
+		 
+		 default:
+		 begin
+			next_state=`Marcare_stare;
+		 end
+		 
+		 endcase
+	end
+
+endmodule

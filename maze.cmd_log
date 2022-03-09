@@ -1,0 +1,2 @@
+xst -intstyle ise -ifn "D:/AC - Arhitectura Calculatoarelor/Teme/Tema 2/Tema2/maze.xst" -ofn "D:/AC - Arhitectura Calculatoarelor/Teme/Tema 2/Tema2/maze.syr" 
+xst -intstyle ise -ifn "D:/AC - Arhitectura Calculatoarelor/Teme/Tema 2/Tema2/maze.xst" -ofn "D:/AC - Arhitectura Calculatoarelor/Teme/Tema 2/Tema2/maze.syr" 

@@ -1,0 +1,97 @@
+`Citire_test_turn_90_deg:
+		begin
+			if(direction==`S)
+			begin
+				row=x+1;
+				col=y;
+				maze_oe=1;
+			end
+			if(direction==`E)
+			begin
+				row=x;
+				col=y+1;
+				maze_oe=1;
+			end
+			if(direction==`N)
+			begin
+				row=x-1;
+				col=y;
+				maze_oe=1;
+			end
+			if(direction==`V)
+			begin
+				row=x;
+				col=y-1;
+				maze_oe=1;
+			end
+			next_state=`Test_turn_90_deg;
+		end
+		
+		
+		`Test_turn_90_deg: 
+		begin  //Turn 90 degrees Counter Clock-wise
+			ok=0;
+			if(maze_in==1)
+			begin
+				if(direction==`S)
+				begin
+					direction=`V;
+				end 
+				else	if(direction==`E)
+				begin
+					direction=`S;
+				end
+				else if(direction==`N)
+				begin
+					direction=`E;
+				end
+				else if(direction==`V)
+				begin
+					direction=`N;
+				end
+				next_state=`Marcare_stare;
+			end 
+			if(maze_in!=1)
+			begin
+				if(direction==`S)
+				begin
+					x=x+1;
+					if(x>63)
+					begin
+						next_state=`finish_reached;
+						ok=1;
+					end
+				end 
+				else	if(direction==`E)
+				begin
+					y=y+1;
+					if(y>63)
+					begin
+						next_state=`finish_reached;
+						ok=1;
+					end
+				end
+				else if(direction==`N)
+				begin
+					x=x-1;
+					if(x<0)
+					begin
+						next_state=`finish_reached;
+						ok=1;
+					end
+				end
+				else if(direction==`V)
+				begin
+					y=y-1;
+					if(y<0)
+					begin
+						next_state=`finish_reached;
+						ok=1;
+					end
+				end
+				if(ok==0)
+				begin
+					next_state=`Marcare_stare;
+				end
+			end	
+		end
